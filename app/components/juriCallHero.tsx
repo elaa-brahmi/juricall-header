@@ -2,68 +2,96 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import AnimatedTitle from "./helper";
 
 const StatueCanvas = dynamic(() => import("./StatueCanvas"), { ssr: false, loading: () => <div style={{ width: "100%", height: "100%" }} /> });
 
 const NAV = ["Home", "About", "Practice Area", "Blogs", "Contact Us"];
 
 function useCounter(target: number, duration = 1800, active = false) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    let start: number | null = null;
-    const step = (ts: number) => {
-      if (!start) start = ts;
-      const progress = Math.min((ts - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      setVal(Math.floor(ease * target));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [active, target, duration]);
-  return val;
+    const [val, setVal] = useState(0);
+    useEffect(() => {
+        if (!active) return;
+        let start: number | null = null;
+        const step = (ts: number) => {
+            if (!start) start = ts;
+            const progress = Math.min((ts - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            setVal(Math.floor(ease * target));
+            if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    }, [active, target, duration]);
+    return val;
 }
 
-function StatItem({ value, label, active }: { value: number; label: string; active: boolean }) {
-  const count = useCounter(value, 1800, active);
-  return (
-    <div className="stat-item">
-      <span className="stat-number" color="black">{count.toLocaleString()}+</span>
-      <span className="stat-label" color="black">{label}</span>
-    </div>
-  );
+function StatItem({ value, label, active, visible }: { value: number; label: string; active: boolean; visible: boolean }) {
+    const count = useCounter(value, 1800, active);
+    return (
+        <div className={`stat-item${visible ? " visible" : ""}`}>
+            <span className="stat-number" color="black">{count.toLocaleString()}+</span>
+            <span className="stat-label" color="black">{label}</span>
+        </div>
+    );
 }
 
 export default function JuriCallHero() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [heroVisible, setHeroVisible] = useState(false);
-  const [statsVisible, setStatsVisible] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [heroVisible, setHeroVisible] = useState(false);
+    const [statsVisible, setStatsVisible] = useState(false);
+    const [teamVisible, setTeamVisible] = useState(false);
+    const [emergencyVisible, setEmergencyVisible] = useState(false);
+    const heroRef = useRef<HTMLDivElement>(null);
+    const statsRef = useRef<HTMLDivElement>(null);
+    const teamRef = useRef<HTMLDivElement>(null);
+    const emergencyRef = useRef<HTMLDivElement>(null);
 
-  // Trigger hero on mount (slight delay for drama)
-  useEffect(() => {
-    const t = setTimeout(() => setHeroVisible(true), 120);
-    return () => clearTimeout(t);
-  }, []);
+    useEffect(() => {
+        const t = setTimeout(() => setHeroVisible(true), 120);
+        return () => clearTimeout(t);
+    }, []);
 
-  // IntersectionObserver for stats
-  useEffect(() => {
-    const el = statsRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true); },
-      { threshold: 0.3 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+    // IntersectionObserver for stats
+    useEffect(() => {
+        const el = statsRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setStatsVisible(true); },
+            { threshold: 0.3 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
 
-  return (
-    <>
-      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+    // IntersectionObserver for team section
+    useEffect(() => {
+        const el = teamRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setTeamVisible(true); },
+            { threshold: 0.3 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
 
-      <style>{`
+    // IntersectionObserver for emergency card
+    useEffect(() => {
+        const el = emergencyRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setEmergencyVisible(true); },
+            { threshold: 0.3 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
+
+    return (
+        <>
+            <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+            <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
@@ -229,10 +257,10 @@ export default function JuriCallHero() {
 
         .hero-team {
           margin-top: 64px;
-          opacity: 0; transform: translateY(20px);
+          opacity: 0; transform: translateX(100px);
           transition: opacity 0.6s 0.7s ease, transform 0.6s 0.7s ease;
         }
-        .hero-team.visible { opacity: 1; transform: translateY(0); }
+        .hero-team.visible { opacity: 1; transform: translateX(0); }
         .hero-team-label {
           font-family: 'Cormorant Garamond', serif;
           font-style: italic; font-size: 18px; color: var(--ink);
@@ -269,18 +297,18 @@ export default function JuriCallHero() {
         }
         .model-container {
           position: absolute; inset: 0;
-          opacity: 0; transform: translateY(40px) scale(0.97);
+          opacity: 0; transform: translateY(80px) scale(0.97);
           transition: opacity 0.9s 0.3s ease, transform 0.9s 0.3s ease;
         }
         .model-container.visible { opacity: 1; transform: translateY(0) scale(1); }
 
         /* Floating card */
         .emergency-card {
-          position: absolute; bottom: 48px; right: 32px;
+          position: absolute; bottom: 120px; right: 32px;
           background: rgba(26,26,26,0.92); backdrop-filter: blur(12px);
           border-radius: 8px; padding: 20px 24px; max-width: 280px;
-          opacity: 0; transform: translateY(20px);
-          transition: opacity 0.6s 0.8s ease, transform 0.6s 0.8s ease;
+          opacity: 0; transform: translateY(60px);
+          transition: opacity 0.7s 0.8s ease, transform 0.7s 0.8s ease;
           z-index: 10;
         }
         .emergency-card.visible { opacity: 1; transform: translateY(0); }
@@ -381,91 +409,83 @@ export default function JuriCallHero() {
         }
       `}</style>
 
-      <div className="page">
-        {/* ── NAV ── */}
-        <nav>
-          <a href="#" className="nav-logo">
-            Juricall <span className="nav-logo-icon">⚖</span>
-          </a>
-          <div className="nav-links">
-            {NAV.map((n, i) => (
-              <a key={n} href="#" className={`nav-link${i === 0 ? " active" : ""}`}>{n}</a>
-            ))}
-          </div>
-          <a href="tel:+213000000000" className="nav-cta desktop">Call: +213 (0) 00 00 00 00</a>
-          <button className="nav-burger" onClick={() => setMenuOpen(true)} aria-label="Menu">
-            <span /><span /><span />
-          </button>
-        </nav>
+            <div className="page">
+                <nav>
+                    <a href="#" className="nav-logo">
+                        Juricall <span className="nav-logo-icon">⚖</span>
+                    </a>
+                    <div className="nav-links">
+                        {NAV.map((n, i) => (
+                            <a key={n} href="#" className={`nav-link${i === 0 ? " active" : ""}`}>{n}</a>
+                        ))}
+                    </div>
+                    <a href="tel:+213000000000" className="nav-cta desktop">Call: +213 (0) 00 00 00 00</a>
+                    <button className="nav-burger" onClick={() => setMenuOpen(true)} aria-label="Menu">
+                        <span /><span /><span />
+                    </button>
+                </nav>
 
-        {/* Mobile drawer */}
-        <div className={`drawer-overlay${menuOpen ? " open" : ""}`} onClick={() => setMenuOpen(false)} />
-        <div className={`mobile-drawer${menuOpen ? " open" : ""}`}>
-          <button className="drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
-          {NAV.map((n) => (
-            <a key={n} href="#" className="drawer-link" onClick={() => setMenuOpen(false)}>{n}</a>
-          ))}
-          <a href="tel:+213000000000" className="drawer-cta">Call: +213 (0) 00 00 00 00</a>
-        </div>
+                <div className={`drawer-overlay${menuOpen ? " open" : ""}`} onClick={() => setMenuOpen(false)} />
+                <div className={`mobile-drawer${menuOpen ? " open" : ""}`}>
+                    <button className="drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
+                    {NAV.map((n) => (
+                        <a key={n} href="#" className="drawer-link" onClick={() => setMenuOpen(false)}>{n}</a>
+                    ))}
+                    <a href="tel:+213000000000" className="drawer-cta">Call: +213 (0) 00 00 00 00</a>
+                </div>
 
-        {/* ── HERO ── */}
-        <section className="hero" ref={heroRef}>
-          {/* Left */}
-          <div className="hero-left">
-            <div className={`hero-badge${heroVisible ? " visible" : ""}`}>
-              Trusted Legal Partner
-            </div>
-            <h1 className={`hero-title${heroVisible ? " visible" : ""}`}>
-              Elite Representation<br />
-              For&nbsp; High-Stakes<br />
-              Legal Matters
-            </h1>
-            <p className={`hero-desc${heroVisible ? " visible" : ""}`}>
-              Strategic litigation, decisive negotiation — we protect your rights and your reputation in complex disputes.
-            </p>
-            <a href="#" className={`hero-btn${heroVisible ? " visible" : ""}`}>
-              Book A Consultation
-            </a>
+                <section className="hero" ref={heroRef}>
+                    <div className="hero-left">
+                        <div className={`hero-badge${heroVisible ? " visible" : ""}`}>
+                            Trusted Legal Partner
+                        </div>
+                        <AnimatedTitle
+                            text="Elite Representation For High-Stakes Legal Matters"
+                            className={`hero-title${heroVisible ? " visible" : ""}`}
+                        />
+                        <p className={`hero-desc${heroVisible ? " visible" : ""}`}>
+                            Strategic litigation, decisive negotiation — we protect your rights and your reputation in complex disputes.
+                        </p>
+                        <a href="#" className={`hero-btn${heroVisible ? " visible" : ""}`}>
+                            Book A Consultation
+                        </a>
 
-            <div className={`hero-team${heroVisible ? " visible" : ""}`}>
-              <div className="hero-team-label">Empower.Inspire.Leadership</div>
-              <div className="avatar-stack">
-                {["JD", "MK", "AL", "RB"].map((initials) => (
-                  <div key={initials} className="avatar">{initials}</div>
-                ))}
-                <div className="avatar-more">+</div>
-              </div>
-            </div>
-          </div>
+                        <div className={`hero-team${teamVisible ? " visible" : ""}`} ref={teamRef}>
+                            <div className="hero-team-label">Empower.Inspire.Leadership</div>
+                            <div className="avatar-stack">
+                                {["JD", "MK", "AL", "RB"].map((initials) => (
+                                    <div key={initials} className="avatar">{initials}</div>
+                                ))}
+                                <div className="avatar-more">+</div>
+                            </div>
+                        </div>
+                    </div>
 
-          {/* Right: 3D */}
-          <div className="hero-right">
-            <div className="hero-right-bg" />
-            <div className={`model-container${heroVisible ? " visible" : ""}`}>
-              <StatueCanvas />
-            </div>
-            <div className={`emergency-card${heroVisible ? " visible" : ""}`}>
-              <div className="emergency-title">24/7 Emergency Counsel &amp; Case Review</div>
-              <div className="emergency-sub">Confidential intake — senior attorney response within 24 hours.</div>
-              <a href="tel:+213000000000" className="emergency-btn">Call: +213 (0) 00 00 00 00</a>
-            </div>
-          </div>
-        </section>
+                    <div className="hero-right">
+                        <div className="hero-right-bg" />
+                        <div className={`model-container${heroVisible ? " visible" : ""}`}>
+                            <StatueCanvas />
+                        </div>
+                        <div className={`emergency-card${emergencyVisible ? " visible" : ""}`} ref={emergencyRef}>
+                            <div className="emergency-title">24/7 Emergency Counsel &amp; Case Review</div>
+                            <div className="emergency-sub">Confidential intake — senior attorney response within 24 hours.</div>
+                            <a href="tel:+213000000000" className="emergency-btn">Call: +213 (0) 00 00 00 00</a>
+                        </div>
+                    </div>
+                </section>
 
-        {/* ── STATS ── */}
-        <section className="stats-section" ref={statsRef}>
-          {[
-            { value: 1550, label: "Successful Cases" },
-            { value: 120, label: "Expert Attorneys & Staff" },
-            { value: 2200, label: "Hours Of Litigation" },
-            { value: 250, label: "Jury Trials & Appeals" },
-          ].map(({ value, label }, i) => (
-            <div key={label} className={`stat-item${statsVisible ? " visible" : ""}`}>
-              <StatItem value={value} label={label} active={statsVisible} />
+                {/* ── STATS ── */}
+                <section className="stats-section" ref={statsRef}>
+                    {[
+                        { value: 1550, label: "Successful Cases" },
+                        { value: 120, label: "Expert Attorneys & Staff" },
+                        { value: 2200, label: "Hours Of Litigation" },
+                        { value: 250, label: "Jury Trials & Appeals" },
+                    ].map(({ value, label }, i) => (
+                        <StatItem key={label} value={value} label={label} active={statsVisible} visible={statsVisible} />
+                    ))}
+                </section>
             </div>
-          ))}
-        </section>
-      </div>
-    </>
-  );
+        </>
+    );
 }
