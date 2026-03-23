@@ -1,11 +1,13 @@
 import { motion } from "motion/react";
+import { CSSProperties } from "react";
 import { containerVariants, wordVariants } from "../utils/constants";
 
-function AnimatedTitle({ text, className }: { text: string; className?: string }) {
+function AnimatedTitle({ text, className, style }: { text: string; className?: string; style?: CSSProperties }) {
   const words = text.split(" ");
   return (
     <motion.h1
       className={className}
+      style={style}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
